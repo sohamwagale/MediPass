@@ -91,19 +91,22 @@ const PatientQR = () => {
 
         {/* Buttons */}
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <button
-            onClick={downloadQR}
-            className="btn-primary flex items-center justify-center gap-2"
-          >
-            <Download className="w-5 h-5" />
-            Download
-          </button>
+  <button
+    onClick={downloadQR}
+    className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-white font-medium shadow-md hover:bg-blue-700 active:scale-95 transition"
+  >
+    <Download className="w-5 h-5" />
+    Download
+  </button>
 
-          <button className="btn-secondary flex items-center justify-center gap-2">
-            <Share2 className="w-5 h-5" />
-            Share
-          </button>
-        </div>
+  <button
+    className="flex items-center justify-center gap-2 rounded-xl border border-blue-600 px-4 py-3 text-blue-600 font-medium shadow-sm hover:bg-blue-50 active:scale-95 transition"
+  >
+    <Share2 className="w-5 h-5" />
+    Share
+  </button>
+</div>
+
 
       </div>
     </div>

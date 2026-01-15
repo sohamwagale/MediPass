@@ -59,7 +59,8 @@ const DoctorDashboard = () => {
           name: data.name || 'Unknown Patient',
           email: data.email || '',
           bloodGroup: data.bloodGroup || 'Unknown',
-          allergies: data.allergies || [],
+          allergies: Array.isArray(data.allergies) ? data.allergies : [],
+          addedAt: data.addedAt,
         })
       })
       

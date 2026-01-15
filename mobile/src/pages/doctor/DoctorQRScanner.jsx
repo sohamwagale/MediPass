@@ -90,6 +90,34 @@ const DoctorQRScanner = () => {
         }
 
         if (isExistingPatient) {
+          // Update existing patient record with latest data (including bloodGroup)
+          if (doctorUid && db && patientUid) {
+            try {
+              // Fetch full patient data to get bloodGroup
+              let patientData = { ...patient }
+              const patientDocRef = doc(db, 'users', patientUid)
+              const patientDoc = await getDoc(patientDocRef)
+              if (patientDoc.exists()) {
+                patientData = { ...patientData, ...patientDoc.data() }
+              }
+
+              // Update patient record with latest data
+              await setDoc(
+                doc(db, 'doctors', doctorUid, 'patients', patientUid),
+                {
+                  patientId: patientUid,
+                  email: patientData.email || patientEmail,
+                  name: patientData.name || '',
+                  bloodGroup: patientData.bloodGroup || 'Unknown',
+                  allergies: patientData.allergies || [],
+                },
+                { merge: true },
+              )
+            } catch (error) {
+              console.log('Error updating patient data:', error)
+            }
+          }
+
           // Patient already exists, navigate directly to profile
           navigation.navigate('DoctorPatientProfile', {
             patientId: patientUid,
@@ -132,13 +160,29 @@ const DoctorQRScanner = () => {
                       return
                     }
 
+                    // Fetch full patient data to get bloodGroup
+                    let patientData = { ...patient }
+                    if (db && patientUid) {
+                      try {
+                        const patientDocRef = doc(db, 'users', patientUid)
+                        const patientDoc = await getDoc(patientDocRef)
+                        if (patientDoc.exists()) {
+                          patientData = { ...patientData, ...patientDoc.data() }
+                        }
+                      } catch (error) {
+                        console.log('Error fetching patient data:', error)
+                      }
+                    }
+
                     // Link patient under doctor
                     await setDoc(
                       doc(db, 'doctors', doctorUid, 'patients', patientUid),
                       {
                         patientId: patientUid,
-                        email: patient.email || patientEmail,
-                        name: patient.name || '',
+                        email: patientData.email || patientEmail,
+                        name: patientData.name || '',
+                        bloodGroup: patientData.bloodGroup || 'Unknown',
+                        allergies: patientData.allergies || [],
                         addedAt: serverTimestamp(),
                       },
                       { merge: true },
@@ -157,8 +201,8 @@ const DoctorQRScanner = () => {
                     // Navigate to patient profile instead of prescription page
                     navigation.navigate('DoctorPatientProfile', {
                       patientId: patientUid,
-                      patientName: patient.name || '',
-                      patientEmail: patient.email || patientEmail,
+                      patientName: patientData.name || '',
+                      patientEmail: patientData.email || patientEmail,
                     })
                     // Reset scanner after navigation
                     setTimeout(() => {

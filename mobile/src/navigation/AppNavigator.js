@@ -38,6 +38,7 @@ import PatientNotifications from '../pages/patient/PatientNotifications'
 import PatientHelpCenter from '../pages/patient/PatientHelpCenter'
 import PatientTermsConditions from '../pages/patient/PatientTermsConditions'
 import PatientDoctorsList from '../pages/patient/PatientDoctorsList'
+import DiagnosisDetail from '../pages/common/DiagnosisDetail'
 
 // Doctor Screens
 import DoctorDashboard from '../pages/doctor/DoctorDashboard'
@@ -283,6 +284,11 @@ const AppNavigator = () => {
               component={PatientDoctorsList}
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="DiagnosisDetail"
+              component={DiagnosisDetail}
+              options={{ headerShown: false }}
+            />
           </>
         ) : isDoctor ? (
           <>
@@ -320,6 +326,11 @@ const AppNavigator = () => {
             <Stack.Screen
               name="DoctorHelpCenter"
               component={DoctorHelpCenter}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="DiagnosisDetail"
+              component={DiagnosisDetail}
               options={{ headerShown: false }}
             />
           </>

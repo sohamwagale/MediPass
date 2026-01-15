@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
 import { format } from 'date-fns'
 import { collection, query, onSnapshot, orderBy } from 'firebase/firestore'
@@ -7,6 +8,7 @@ import { auth, db } from '../../services/firebase'
 import { colors } from '../../constants/colors'
 
 const MedicalTimeline = ({ patientId }) => {
+  const navigation = useNavigation()
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -34,8 +36,11 @@ const MedicalTimeline = ({ patientId }) => {
             diagnosis: data.diagnosis || '',
             prescription: data.prescription || null,
             dosage: data.dosage || null,
+            frequency: data.frequency || null,
+            duration: data.duration || null,
             instructions: data.instructions || null,
             doctorName: data.doctorName || 'Unknown Doctor',
+            labReports: data.labReports || [],
             date: data.date || (data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString()),
             createdAt: data.createdAt,
           })
@@ -86,7 +91,14 @@ const MedicalTimeline = ({ patientId }) => {
             <View style={styles.timelineLine} />
             <View style={[styles.timelineDot, index === 0 && styles.timelineDotActive]} />
             
-            <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => navigation.navigate('DiagnosisDetail', {
+                recordId: record.id,
+                patientId: currentUserId,
+              })}
+              activeOpacity={0.7}
+            >
               <View style={styles.cardHeader}>
                 <View style={styles.dateContainer}>
                   <Ionicons name="calendar" size={20} color={colors.primary[600]} />
@@ -120,7 +132,21 @@ const MedicalTimeline = ({ patientId }) => {
                     <Text style={styles.instructions}>{record.instructions}</Text>
                 </View>
               )}
-            </View>
+
+              {record.labReports && record.labReports.length > 0 && (
+                <View style={styles.labReportsBadge}>
+                  <Ionicons name="document-attach" size={16} color={colors.primary[600]} />
+                  <Text style={styles.labReportsText}>
+                    {record.labReports.length} {record.labReports.length === 1 ? 'lab report' : 'lab reports'}
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.viewMoreContainer}>
+                <Text style={styles.viewMoreText}>Tap to view details</Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.primary[600]} />
+              </View>
+            </TouchableOpacity>
           </View>
           )
         })}
@@ -278,6 +304,37 @@ const styles = StyleSheet.create({
   instructions: {
     fontSize: 14,
     color: colors.neutral[700],
+  },
+  labReportsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.primary[50],
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+  },
+  labReportsText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary[700],
+  },
+  viewMoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.neutral[200],
+    gap: 4,
+  },
+  viewMoreText: {
+    fontSize: 12,
+    color: colors.primary[600],
+    fontWeight: '500',
   },
 })
 

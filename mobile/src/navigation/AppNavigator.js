@@ -32,6 +32,11 @@ import EditEmergencyProfile from '../pages/patient/EditEmergencyProfile'
 
 import PatientChatbot from '../pages/patient/PatientChatbot'
 import PatientProfile from '../pages/patient/PatientProfile'
+import PatientEditProfile from '../pages/patient/PatientEditProfile'
+import PatientPrivacySecurity from '../pages/patient/PatientPrivacySecurity'
+import PatientNotifications from '../pages/patient/PatientNotifications'
+import PatientHelpCenter from '../pages/patient/PatientHelpCenter'
+import PatientTermsConditions from '../pages/patient/PatientTermsConditions'
 
 // Doctor Screens
 import DoctorDashboard from '../pages/doctor/DoctorDashboard'
@@ -233,6 +238,31 @@ const AppNavigator = () => {
             <Stack.Screen
               name="EditEmergencyProfile"
               component={EditEmergencyProfile}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="PatientEditProfile"
+              component={PatientEditProfile}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="PatientPrivacySecurity"
+              component={PatientPrivacySecurity}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="PatientNotifications"
+              component={PatientNotifications}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="PatientHelpCenter"
+              component={PatientHelpCenter}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="PatientTermsConditions"
+              component={PatientTermsConditions}
               options={{ headerShown: false }}
             />
           </>

@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
-import { CommonActions } from '@react-navigation/native'
+import { CommonActions, useNavigation } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuthStore } from '../../stores/authStore'
 import { navigationRef } from '../../navigation/AppNavigator'
@@ -9,6 +9,7 @@ import { colors } from '../../constants/colors'
 
 const PatientProfile = () => {
   const { user, logout } = useAuthStore()
+  const navigation = useNavigation()
 
   const handleLogout = () => {
     Alert.alert(
@@ -60,7 +61,10 @@ const PatientProfile = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
           
-          <TouchableOpacity style={styles.optionItem}>
+          <TouchableOpacity
+            style={styles.optionItem}
+            onPress={() => navigation.navigate('PatientEditProfile')}
+          >
             <View style={styles.optionLeft}>
               <View style={[styles.optionIcon, { backgroundColor: colors.primary[100] }]}>
                 <Ionicons name="person-circle" size={24} color={colors.primary[600]} />
@@ -70,7 +74,10 @@ const PatientProfile = () => {
             <Ionicons name="chevron-forward" size={20} color={colors.neutral[400]} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.optionItem}>
+          <TouchableOpacity
+            style={styles.optionItem}
+            onPress={() => navigation.navigate('PatientPrivacySecurity')}
+          >
             <View style={styles.optionLeft}>
               <View style={[styles.optionIcon, { backgroundColor: colors.success[100] }]}>
                 <Ionicons name="shield-checkmark" size={24} color={colors.success[600]} />
@@ -80,7 +87,10 @@ const PatientProfile = () => {
             <Ionicons name="chevron-forward" size={20} color={colors.neutral[400]} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.optionItem}>
+          <TouchableOpacity
+            style={styles.optionItem}
+            onPress={() => navigation.navigate('PatientNotifications')}
+          >
             <View style={styles.optionLeft}>
               <View style={[styles.optionIcon, { backgroundColor: colors.neutral[200] }]}>
                 <Ionicons name="notifications" size={24} color={colors.neutral[700]} />
@@ -95,7 +105,10 @@ const PatientProfile = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Support</Text>
           
-          <TouchableOpacity style={styles.optionItem}>
+          <TouchableOpacity
+            style={styles.optionItem}
+            onPress={() => navigation.navigate('PatientHelpCenter')}
+          >
             <View style={styles.optionLeft}>
               <View style={[styles.optionIcon, { backgroundColor: colors.primary[100] }]}>
                 <Ionicons name="help-circle" size={24} color={colors.primary[600]} />
@@ -105,7 +118,10 @@ const PatientProfile = () => {
             <Ionicons name="chevron-forward" size={20} color={colors.neutral[400]} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.optionItem}>
+          <TouchableOpacity
+            style={styles.optionItem}
+            onPress={() => navigation.navigate('PatientTermsConditions')}
+          >
             <View style={styles.optionLeft}>
               <View style={[styles.optionIcon, { backgroundColor: colors.neutral[200] }]}>
                 <Ionicons name="document-text" size={24} color={colors.neutral[700]} />

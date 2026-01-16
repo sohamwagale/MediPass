@@ -92,6 +92,23 @@ const PatientProfile = () => {
           </TouchableOpacity>
         </View>
 
+        {/* Health & Fitness Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Health & Fitness</Text>
+          <TouchableOpacity
+            style={styles.optionItem}
+            onPress={() => navigation.navigate('HealthDataScreen')}
+          >
+            <View style={styles.optionLeft}>
+              <View style={[styles.optionIcon, { backgroundColor: colors.success[100] }]}>
+                <Ionicons name="fitness" size={24} color={colors.success[600]} />
+              </View>
+              <Text style={styles.optionText}>Connect Fitbit</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.neutral[400]} />
+          </TouchableOpacity>
+        </View>
+
         {/* My Doctors Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>My Doctors</Text>

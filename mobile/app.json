@@ -14,6 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
+      "scheme": "medipass",
       "infoPlist": {
         "NSCameraUsageDescription": "This app needs access to your camera to scan patient QR codes."
       }
@@ -24,6 +25,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
+      "scheme": "medipass",
       "permissions": [
         "CAMERA",
         "android.permission.CAMERA",
@@ -49,7 +51,8 @@
           "color": "#ffffff",
           "sounds": []
         }
-      ]
+      ],
+      "expo-secure-store"
     ]
   }
 }

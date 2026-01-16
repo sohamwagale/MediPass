@@ -10,7 +10,7 @@ import { mockPatients } from '../../data/mockData'
 import { colors } from '../../constants/colors'
 import QRCode from "react-native-qrcode-svg"
 import * as MediaLibrary from 'expo-media-library'
-import { Alert, Platform } from 'react-native';
+// import { Alert, Platform } from 'react-native';
 
 // Safe import with fallback for QRCode
 // let QRCode = null

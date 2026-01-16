@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { format } from 'date-fns'
 import { collection, onSnapshot, orderBy, query, doc, updateDoc } from 'firebase/firestore'
 import Navbar from '../../components/common/Navbar'
+import FloatingChatbotButton from '../../components/patient/FloatingChatbotButton'
 import { colors } from '../../constants/colors'
 import { auth, db } from '../../services/firebase'
 import { cancelMedicationReminders } from '../../services/notificationService'
@@ -262,6 +263,7 @@ const PatientPrescriptions = () => {
           )}
         </View>
       </ScrollView>
+      <FloatingChatbotButton />
     </View>
   )
 }

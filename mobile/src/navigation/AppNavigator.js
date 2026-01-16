@@ -94,8 +94,6 @@ const PatientTabNavigator = () => {
           else if (route.name === 'PatientMedicalTimeline') iconName = focused ? 'pulse' : 'pulse-outline'
           else if (route.name === 'PatientPrescriptions') iconName = focused ? 'medkit' : 'medkit-outline'
           else if (route.name === 'PatientEmergencyProfile') iconName = focused ? 'warning' : 'warning-outline'
-          else if (route.name === 'PatientChatbot') iconName = focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'
-          else if (route.name === 'PatientProfile') iconName = focused ? 'person' : 'person-outline'
 
           return <Ionicons name={iconName} size={size} color={color} />
         },
@@ -125,16 +123,6 @@ const PatientTabNavigator = () => {
         name="PatientEmergencyProfile"
         component={PatientEmergencyProfile}
         options={{ title: 'Emergency' }}
-      />
-      <Tab.Screen
-        name="PatientChatbot"
-        component={PatientChatbot}
-        options={{ title: 'Chatbot' }}
-      />
-      <Tab.Screen
-        name="PatientProfile"
-        component={PatientProfile}
-        options={{ title: 'Profile' }}
       />
 
     </Tab.Navigator>
@@ -336,6 +324,16 @@ const AppNavigator = () => {
             <Stack.Screen
               name="DiagnosisDetail"
               component={DiagnosisDetail}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="PatientChatbot"
+              component={PatientChatbot}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="PatientProfile"
+              component={PatientProfile}
               options={{ headerShown: false }}
             />
           </>

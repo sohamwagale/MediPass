@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import PatientQR from '../../components/patient/PatientQR'
 import Navbar from '../../components/common/Navbar'
+import FloatingChatbotButton from '../../components/patient/FloatingChatbotButton'
 import { colors } from '../../constants/colors'
 
 const PatientQRCode = () => {
@@ -13,6 +14,7 @@ const PatientQRCode = () => {
           <PatientQR />
         
       </ScrollView>
+      <FloatingChatbotButton />
     </View>
   )
 }

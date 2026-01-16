@@ -1,14 +1,20 @@
 import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
-import { colors } from '../../constants/colors'
+import { getColors } from '../../constants/colors'
+import { useAuthStore } from '../../stores/authStore'
+import { useThemeStore } from '../../stores/themeStore'
 
 const Navbar = () => {
   const navigation = useNavigation()
+  const { user } = useAuthStore()
+  const { isDarkMode, toggleDarkMode } = useThemeStore()
+  const isPatient = user?.role === 'patient'
+  const colors = getColors(isDarkMode)
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.grey, borderBottomColor: colors.neutral[200] }]}>
       <View style={styles.content}>
         <TouchableOpacity
           style={styles.logoContainer}
@@ -23,11 +29,39 @@ const Navbar = () => {
             }
           }}
         >
-          <View style={styles.logo}>
+          <View style={[styles.logo, { backgroundColor: colors.primary[600] }]}>
             <Ionicons name="qr-code" size={24} color={colors.white} />
           </View>
-          <Text style={styles.logoText}>MediPass</Text>
+          <Text style={[styles.logoText, { color: colors.neutral[900] }]}>MediPass</Text>
         </TouchableOpacity>
+        
+        {isPatient && (
+          <View style={styles.rightButtons}>
+            <View style={styles.darkModeContainer}>
+              <Ionicons 
+                name={isDarkMode ? 'moon' : 'sunny'} 
+                size={20} 
+                color={colors.neutral[700]} 
+              />
+              <Switch
+                value={isDarkMode}
+                onValueChange={toggleDarkMode}
+                trackColor={{ false: colors.neutral[300], true: colors.primary[600] }}
+                thumbColor={colors.white}
+                style={styles.switch}
+              />
+            </View>
+            <TouchableOpacity
+              style={[styles.profileButton, { 
+                backgroundColor: colors.neutral[100], 
+                borderColor: colors.neutral[200] 
+              }]}
+              onPress={() => navigation.navigate('PatientProfile')}
+            >
+              <Ionicons name="person" size={24} color={colors.neutral[900]} />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </View>
   )
@@ -35,15 +69,13 @@ const Navbar = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.grey,
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
     paddingTop: 32,
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     paddingHorizontal: 24,
     paddingVertical: 16,
   },
@@ -56,14 +88,34 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: colors.primary[600],
     alignItems: 'center',
     justifyContent: 'center',
   },
   logoText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: colors.neutral[900],
+  },
+  rightButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  darkModeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 8,
+  },
+  switch: {
+    transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }],
+  },
+  profileButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
   },
 })
 

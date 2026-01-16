@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
 import MedicalTimeline from '../../components/common/MedicalTimeline'
 import Navbar from '../../components/common/Navbar'
+import FloatingChatbotButton from '../../components/patient/FloatingChatbotButton'
 import { colors } from '../../constants/colors'
 
 const PatientMedicalTimeline = () => {
@@ -42,6 +43,7 @@ const PatientMedicalTimeline = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <FloatingChatbotButton />
     </View>
   )
 }

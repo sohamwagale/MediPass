@@ -14,6 +14,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore'
 
 import Navbar from '../../components/common/Navbar'
+import FloatingChatbotButton from '../../components/patient/FloatingChatbotButton'
 import { auth, db } from '../../services/firebase'
 import { colors } from '../../constants/colors'
 
@@ -171,6 +172,7 @@ const PatientEmergencyProfile = ({ navigation }) => {
           <Text style={styles.editText}>Edit Emergency Profile</Text>
         </TouchableOpacity>
       </ScrollView>
+      <FloatingChatbotButton />
     </View>
   )
 }

@@ -8,6 +8,7 @@ import { useAuthStore } from '../../stores/authStore'
 import PatientQR from '../../components/patient/PatientQR'
 import MedicalTimeline from '../../components/common/MedicalTimeline'
 import Navbar from '../../components/common/Navbar'
+import FloatingChatbotButton from '../../components/patient/FloatingChatbotButton'
 import { colors } from '../../constants/colors'
 
 // Safe import with fallback for LinearGradient
@@ -147,6 +148,7 @@ const PatientDashboard = () => {
 
         <MedicalTimeline />
       </ScrollView>
+      <FloatingChatbotButton />
     </View>
   )
 }

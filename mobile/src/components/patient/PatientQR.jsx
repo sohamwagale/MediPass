@@ -3,12 +3,14 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import * as Sharing from 'expo-sharing'
-import { File, Paths } from 'expo-file-system'
+import * as FileSystem from 'expo-file-system/legacy'
 import ViewShot from 'react-native-view-shot'
 import { useAuthStore } from '../../stores/authStore'
 import { mockPatients } from '../../data/mockData'
 import { colors } from '../../constants/colors'
-import QRCode from "react-native-qrcode-svg";
+import QRCode from "react-native-qrcode-svg"
+import * as MediaLibrary from 'expo-media-library'
+import { Alert, Platform } from 'react-native';
 
 // Safe import with fallback for QRCode
 // let QRCode = null
@@ -24,7 +26,7 @@ const PatientQR = ({ patientId }) => {
   const [copied, setCopied] = useState(false)
   const [saving, setSaving] = useState(false)
   const viewShotRef = useRef(null)
-  
+
   // Use logged-in user's email as QR code value, or fallback to mock patient
   const patient = mockPatients.find(p => p.id === patientId)
   const qrValue = user?.email || patient?.email || 'patient@email.com'
@@ -48,7 +50,10 @@ const PatientQR = ({ patientId }) => {
     }
 
     try {
-      const uri = await viewShotRef.current.capture()
+      const uri = await captureRef(qrRef, {
+        format: 'png',
+        quality: 1,
+      })
       return uri
     } catch (error) {
       console.error('Error capturing QR code:', error)
@@ -57,33 +62,86 @@ const PatientQR = ({ patientId }) => {
     }
   }
 
+  // const handleDownload = async () => {
+  //   setSaving(true)
+  //   try {
+  //     const uri = await captureQRCode()
+  //     if (!uri) {
+  //       setSaving(false)
+  //       return
+  //     }
+
+  //     // Ensure documentDirectory is available
+  //     if (!FileSystem.documentDirectory) {
+  //       throw new Error('Document directory is not available')
+  //     }
+
+  //     const filename = `MediPass_QR_${Date.now()}.png`
+  //     const fileUri = `${FileSystem.documentDirectory}${filename}`
+
+  //     // Copy the captured image to a permanent location using legacy API
+  //     await FileSystem.copyAsync({
+  //       from: uri,
+  //       to: fileUri,
+  //     })
+
+  //     // Check if sharing is available
+  //     const isAvailable = await Sharing.isAvailableAsync()
+  //     if (isAvailable) {
+  //       await Sharing.shareAsync(fileUri, {
+  //         mimeType: 'image/png',
+  //         dialogTitle: 'Save QR Code',
+  //       })
+  //       Alert.alert('Success', 'QR code saved successfully!')
+  //     } else {
+  //       Alert.alert('Success', `QR code saved to: ${fileUri}`)
+  //     }
+  //   } catch (error) {
+  //     console.error('Error downloading QR code:', error)
+  //     Alert.alert('Error', 'Failed to download QR code')
+  //   } finally {
+  //     setSaving(false)
+  //   }
+  // }
+
   const handleDownload = async () => {
     setSaving(true)
+
     try {
-      const uri = await captureQRCode()
-      if (!uri) {
-        setSaving(false)
+      // Ask permission to save to gallery
+      const { status } = await MediaLibrary.requestPermissionsAsync()
+      if (status !== 'granted') {
+        Alert.alert('Permission required', 'Storage permission is needed to save the QR code.')
         return
       }
 
+      // Capture QR view (like drawing SVG to canvas)
+      const uri = await captureQRCode() // must return a local image uri
+      if (!uri) return
+
       const filename = `MediPass_QR_${Date.now()}.png`
-      const fileUri = `${Paths.documentDirectory}${filename}`
+      const fileUri = FileSystem.documentDirectory + filename
 
-      // Copy the captured image to a permanent location using new API
-      const sourceFile = new File(uri)
-      await sourceFile.copy(fileUri)
+      // Move to app storage
+      await FileSystem.copyAsync({
+        from: uri,
+        to: fileUri,
+      })
 
-      // Check if sharing is available
-      const isAvailable = await Sharing.isAvailableAsync()
-      if (isAvailable) {
+      // Save to device gallery (actual "download")
+      const asset = await MediaLibrary.createAssetAsync(fileUri)
+      await MediaLibrary.createAlbumAsync('MediPass', asset, false)
+
+      Alert.alert('Success', 'QR code saved to gallery!')
+
+      // Optional: also open share dialog like web "save as"
+      if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(fileUri, {
           mimeType: 'image/png',
-          dialogTitle: 'Save QR Code',
+          dialogTitle: 'Share QR Code',
         })
-        Alert.alert('Success', 'QR code saved successfully!')
-      } else {
-        Alert.alert('Success', `QR code saved to: ${fileUri}`)
       }
+
     } catch (error) {
       console.error('Error downloading QR code:', error)
       Alert.alert('Error', 'Failed to download QR code')
@@ -91,6 +149,7 @@ const PatientQR = ({ patientId }) => {
       setSaving(false)
     }
   }
+
 
   const handleShare = async () => {
     setSaving(true)
@@ -149,7 +208,7 @@ const PatientQR = ({ patientId }) => {
             )}
           </View>
         </ViewShot>
-        
+
         <Text style={styles.title}>Your MediPass QR</Text>
         <Text style={styles.subtitle}>Show this QR code to healthcare providers</Text>
 
@@ -157,22 +216,22 @@ const PatientQR = ({ patientId }) => {
           <Text style={styles.codeText} numberOfLines={1} ellipsizeMode="middle">
             {qrValue}
           </Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.copyButton}
             onPress={handleCopy}
           >
-            <Ionicons 
-              name={copied ? "checkmark" : "copy"} 
-              size={20} 
-              color={copied ? colors.success[600] : colors.neutral[600]} 
+            <Ionicons
+              name={copied ? "checkmark" : "copy"}
+              size={20}
+              color={copied ? colors.success[600] : colors.neutral[600]}
             />
           </TouchableOpacity>
         </View>
 
-        {}
-        
+        { }
+
         <View style={styles.buttonRow}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.button, saving && styles.buttonDisabled]}
             onPress={handleDownload}
             disabled={saving}
@@ -189,7 +248,7 @@ const PatientQR = ({ patientId }) => {
               </>
             )}
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.button, styles.buttonSecondary, saving && styles.buttonDisabled]}
             onPress={handleShare}
             disabled={saving}

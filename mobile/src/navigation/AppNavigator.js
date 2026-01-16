@@ -38,6 +38,7 @@ import PatientNotifications from '../pages/patient/PatientNotifications'
 import PatientHelpCenter from '../pages/patient/PatientHelpCenter'
 import PatientTermsConditions from '../pages/patient/PatientTermsConditions'
 import PatientDoctorsList from '../pages/patient/PatientDoctorsList'
+import PatientDoctorProfile from '../pages/patient/PatientDoctorProfile'
 import DiagnosisDetail from '../pages/common/DiagnosisDetail'
 
 // Doctor Screens
@@ -306,6 +307,11 @@ const AppNavigator = () => {
             <Stack.Screen
               name="PatientDoctorsList"
               component={PatientDoctorsList}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="PatientDoctorProfile"
+              component={PatientDoctorProfile}
               options={{ headerShown: false }}
             />
             <Stack.Screen

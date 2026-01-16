@@ -4,7 +4,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 // Import Firebase
-import { auth, db } from '../services/firebase'
+import { auth, db, storage } from '../services/firebase'
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -15,8 +15,14 @@ import {
   doc,
   getDoc,
   setDoc,
+  collection,
+  query,
+  where,
+  getDocs,
   serverTimestamp,
 } from 'firebase/firestore'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import * as FileSystem from 'expo-file-system/legacy'
 
 export const useAuthStore = create(
   persist(
@@ -171,6 +177,81 @@ export const useAuthStore = create(
       },
 
       /**
+       * Verify doctor license number
+       */
+      verifyLicense: async (licenseNumber) => {
+        try {
+          if (!db) {
+            throw new Error('Database not available')
+          }
+
+          // Query the license collection for matching license number
+          const licenseRef = collection(db, 'license')
+          const q = query(licenseRef, where('licenseNumber', '==', licenseNumber.trim()))
+          const querySnapshot = await getDocs(q)
+
+          if (querySnapshot.empty) {
+            return { success: false, error: 'License number not found in our database' }
+          }
+
+          // License found
+          const licenseDoc = querySnapshot.docs[0]
+          const licenseData = licenseDoc.data()
+          
+          return { 
+            success: true, 
+            licenseData: {
+              id: licenseDoc.id,
+              ...licenseData
+            }
+          }
+        } catch (error) {
+          console.error('❌ License verification error:', error)
+          return { 
+            success: false, 
+            error: error.message || 'Failed to verify license. Please try again.' 
+          }
+        }
+      },
+
+      /**
+       * Upload license certificate to Firebase Storage
+       */
+      uploadLicenseCertificate: async (fileUri, userId) => {
+        try {
+          if (!storage || !fileUri) {
+            throw new Error('Storage not available or file URI missing')
+          }
+
+          // Read the file
+          const fileInfo = await FileSystem.getInfoAsync(fileUri)
+          if (!fileInfo.exists) {
+            throw new Error('File does not exist')
+          }
+
+          // Create a blob from the file
+          const response = await fetch(fileUri)
+          const blob = await response.blob()
+
+          // Upload to Firebase Storage
+          const fileName = `license_certificates/${userId}_${Date.now()}.jpg`
+          const storageRef = ref(storage, fileName)
+          await uploadBytes(storageRef, blob)
+
+          // Get download URL
+          const downloadURL = await getDownloadURL(storageRef)
+          
+          return { success: true, downloadURL }
+        } catch (error) {
+          console.error('❌ Certificate upload error:', error)
+          return { 
+            success: false, 
+            error: error.message || 'Failed to upload certificate. Please try again.' 
+          }
+        }
+      },
+
+      /**
        * Sign up new user
        */
       signup: async (data) => {
@@ -192,44 +273,135 @@ export const useAuthStore = create(
             return { success: true }
           }
 
-          // Create user in Firebase Auth
-          const userCredential = await createUserWithEmailAndPassword(
-            auth,
-            data.email,
-            data.password
-          )
-          const firebaseUser = userCredential.user
+          // Doctor-specific verification
+          if (data.role === 'doctor') {
+            // Verify license number
+            if (!data.licenseNumber) {
+              return { 
+                success: false, 
+                error: 'License number is required for doctor registration' 
+              }
+            }
 
-          // Prepare user data for Firestore
-          const userData = {
-            name: data.name,
-            email: data.email,
-            phone: data.phone || '',
-            role: data.role || 'patient',
-            createdAt: serverTimestamp()
-          }
+            // Verify license (call the method from the store)
+            const licenseVerification = await get().verifyLicense(data.licenseNumber)
 
-          // Save to Firestore
-          const userDocRef = doc(db, 'users', firebaseUser.uid)
-          await setDoc(userDocRef, userData)
+            if (!licenseVerification.success) {
+              return { 
+                success: false, 
+                error: licenseVerification.error || 'License verification failed' 
+              }
+            }
 
-          const token = await firebaseUser.getIdToken()
+            // Upload license certificate if provided
+            let certificateURL = null
+            if (data.licenseCertificate) {
+              // We need to create a temporary user ID for the upload
+              // We'll use email as a temporary identifier
+              const tempUserId = data.email.replace(/[^a-zA-Z0-9]/g, '_')
+              const uploadResult = await get().uploadLicenseCertificate(
+                data.licenseCertificate, 
+                tempUserId
+              )
+              
+              if (!uploadResult.success) {
+                return { 
+                  success: false, 
+                  error: uploadResult.error || 'Failed to upload certificate' 
+                }
+              }
+              
+              certificateURL = uploadResult.downloadURL
+            }
 
-          set({
-            user: {
-              id: firebaseUser.uid,
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
+            // Create user in Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(
+              auth,
+              data.email,
+              data.password
+            )
+            const firebaseUser = userCredential.user
+
+            // Re-upload certificate with actual user ID if needed
+            if (data.licenseCertificate && certificateURL) {
+              // Certificate already uploaded, but we can update the path if needed
+              // For now, we'll keep the original upload
+            }
+
+            // Prepare user data for Firestore
+            const userData = {
               name: data.name,
+              email: data.email,
               phone: data.phone || '',
-              role: data.role || 'patient',
-              ...userData
-            },
-            token
-          })
+              role: 'doctor',
+              licenseNumber: data.licenseNumber.trim(),
+              licenseCertificateURL: certificateURL,
+              verified: true, // License verified
+              createdAt: serverTimestamp()
+            }
 
-          console.log('✅ Signup successful:', userData.role)
-          return { success: true }
+            // Save to Firestore
+            const userDocRef = doc(db, 'users', firebaseUser.uid)
+            await setDoc(userDocRef, userData)
+
+            const token = await firebaseUser.getIdToken()
+
+            set({
+              user: {
+                id: firebaseUser.uid,
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                name: data.name,
+                phone: data.phone || '',
+                role: 'doctor',
+                ...userData
+              },
+              token
+            })
+
+            console.log('✅ Doctor signup successful with verified license')
+            return { success: true }
+          } else {
+            // Patient signup (no verification needed)
+            // Create user in Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(
+              auth,
+              data.email,
+              data.password
+            )
+            const firebaseUser = userCredential.user
+
+            // Prepare user data for Firestore
+            const userData = {
+              name: data.name,
+              email: data.email,
+              phone: data.phone || '',
+              role: 'patient',
+              createdAt: serverTimestamp()
+            }
+
+            // Save to Firestore
+            const userDocRef = doc(db, 'users', firebaseUser.uid)
+            await setDoc(userDocRef, userData)
+
+            const token = await firebaseUser.getIdToken()
+
+            set({
+              user: {
+                id: firebaseUser.uid,
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                name: data.name,
+                phone: data.phone || '',
+                role: 'patient',
+                ...userData
+              },
+              token
+            })
+
+            console.log('✅ Patient signup successful')
+            return { success: true }
+          }
         } catch (error) {
           console.error('❌ Signup error:', error)
           let errorMessage = 'Signup failed. Please try again.'

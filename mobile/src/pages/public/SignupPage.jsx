@@ -7,10 +7,12 @@ import {
   TouchableOpacity, 
   ScrollView, 
   ActivityIndicator, 
-  Alert 
+  Alert,
+  Image 
 } from 'react-native'
 import { useRoute } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
+import * as DocumentPicker from 'expo-document-picker'
 import { colors } from '../../constants/colors'
 import { useAuthStore } from '../../stores/authStore'
 
@@ -25,8 +27,11 @@ const SignupPage = () => {
     phone: '',
     password: '',
     confirmPassword: '',
-    role: role || 'patient'
+    role: role || 'patient',
+    licenseNumber: '',
+    licenseCertificate: null, // Will store the file URI
   })
+  const [uploadingCertificate, setUploadingCertificate] = useState(false)
 
   const handleSubmit = async () => {
     // Validation
@@ -60,6 +65,18 @@ const SignupPage = () => {
       return
     }
 
+    // Doctor-specific validation
+    if (formData.role === 'doctor') {
+      if (!formData.licenseNumber.trim()) {
+        Alert.alert('Error', 'License number is required for doctors')
+        return
+      }
+      if (!formData.licenseCertificate) {
+        Alert.alert('Error', 'Please upload your medical license certificate')
+        return
+      }
+    }
+
     try {
       const result = await signup({
         name: formData.name.trim(),
@@ -67,6 +84,8 @@ const SignupPage = () => {
         phone: formData.phone.trim(),
         password: formData.password,
         role: formData.role,
+        licenseNumber: formData.role === 'doctor' ? formData.licenseNumber.trim() : undefined,
+        licenseCertificate: formData.role === 'doctor' ? formData.licenseCertificate : undefined,
       })
 
       if (!result.success) {
@@ -76,6 +95,27 @@ const SignupPage = () => {
     } catch (error) {
       console.error('Signup error:', error)
       Alert.alert('Error', 'An unexpected error occurred. Please try again.')
+    }
+  }
+
+  const handlePickCertificate = async () => {
+    try {
+      setUploadingCertificate(true)
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'image/*',
+        copyToCacheDirectory: true,
+      })
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0]
+        setFormData({ ...formData, licenseCertificate: asset.uri })
+        Alert.alert('Success', 'License certificate selected')
+      }
+    } catch (error) {
+      console.error('Error picking certificate:', error)
+      Alert.alert('Error', 'Failed to select certificate. Please try again.')
+    } finally {
+      setUploadingCertificate(false)
     }
   }
 
@@ -176,6 +216,71 @@ const SignupPage = () => {
               autoCorrect={false}
             />
           </View>
+
+          {/* Doctor-specific fields */}
+          {formData.role === 'doctor' && (
+            <>
+              {/* License Number Input */}
+              <View style={styles.inputGroup}>
+                <View style={styles.labelContainer}>
+                  <Ionicons name="document-text" size={16} color={colors.neutral[700]} />
+                  <Text style={styles.label}>Medical License Number *</Text>
+                </View>
+                <TextInput
+                  style={styles.input}
+                  value={formData.licenseNumber}
+                  onChangeText={(text) => setFormData({ ...formData, licenseNumber: text })}
+                  placeholder="Enter your medical license number"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <Text style={styles.helperText}>
+                  Your license will be verified before account creation
+                </Text>
+              </View>
+
+              {/* License Certificate Upload */}
+              <View style={styles.inputGroup}>
+                <View style={styles.labelContainer}>
+                  <Ionicons name="image" size={16} color={colors.neutral[700]} />
+                  <Text style={styles.label}>License Certificate *</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.uploadButton}
+                  onPress={handlePickCertificate}
+                  disabled={uploadingCertificate}
+                >
+                  {uploadingCertificate ? (
+                    <ActivityIndicator color={colors.primary[600]} />
+                  ) : (
+                    <>
+                      <Ionicons 
+                        name={formData.licenseCertificate ? "checkmark-circle" : "cloud-upload"} 
+                        size={20} 
+                        color={formData.licenseCertificate ? colors.success[600] : colors.primary[600]} 
+                      />
+                      <Text style={styles.uploadButtonText}>
+                        {formData.licenseCertificate ? 'Certificate Selected' : 'Upload Certificate Image'}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+                {formData.licenseCertificate && (
+                  <View style={styles.certificatePreview}>
+                    <Ionicons name="document" size={24} color={colors.success[600]} />
+                    <Text style={styles.certificateText} numberOfLines={1}>
+                      Certificate ready to upload
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setFormData({ ...formData, licenseCertificate: null })}
+                    >
+                      <Ionicons name="close-circle" size={20} color={colors.error[600]} />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            </>
+          )}
 
           {/* Submit Button */}
           <TouchableOpacity
@@ -297,6 +402,47 @@ const styles = StyleSheet.create({
     color: colors.neutral[500],
     textAlign: 'center',
     marginTop: 8,
+  },
+  helperText: {
+    fontSize: 12,
+    color: colors.neutral[500],
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  uploadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.primary[50],
+    borderWidth: 2,
+    borderColor: colors.primary[200],
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 8,
+  },
+  uploadButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.primary[600],
+  },
+  certificatePreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.success[50],
+    borderWidth: 1,
+    borderColor: colors.success[200],
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 8,
+  },
+  certificateText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.success[700],
+    fontWeight: '500',
   },
 })
 

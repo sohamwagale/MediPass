@@ -137,7 +137,12 @@ const PatientDoctorsList = () => {
             {doctors.map((doctor) => {
               const avatarLetter = (doctor.name || 'D')[0].toUpperCase()
               return (
-                <View key={doctor.id} style={styles.doctorCard}>
+                <TouchableOpacity
+                  key={doctor.id}
+                  style={styles.doctorCard}
+                  onPress={() => navigation.navigate('PatientDoctorProfile', { doctorId: doctor.id })}
+                  activeOpacity={0.7}
+                >
                   <View style={styles.doctorAvatar}>
                     <Text style={styles.doctorAvatarText}>{avatarLetter}</Text>
                   </View>
@@ -153,7 +158,8 @@ const PatientDoctorsList = () => {
                       <Text style={styles.doctorEmail}>{doctor.email}</Text>
                     )}
                   </View>
-                </View>
+                  <Ionicons name="chevron-forward" size={24} color={colors.neutral[400]} />
+                </TouchableOpacity>
               )
             })}
           </View>

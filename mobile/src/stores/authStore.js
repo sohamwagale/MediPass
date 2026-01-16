@@ -363,44 +363,44 @@ export const useAuthStore = create(
             return { success: true }
           } else {
             // Patient signup (no verification needed)
-            // Create user in Firebase Auth
-            const userCredential = await createUserWithEmailAndPassword(
-              auth,
-              data.email,
-              data.password
-            )
-            const firebaseUser = userCredential.user
+          // Create user in Firebase Auth
+          const userCredential = await createUserWithEmailAndPassword(
+            auth,
+            data.email,
+            data.password
+          )
+          const firebaseUser = userCredential.user
 
-            // Prepare user data for Firestore
-            const userData = {
-              name: data.name,
-              email: data.email,
-              phone: data.phone || '',
+          // Prepare user data for Firestore
+          const userData = {
+            name: data.name,
+            email: data.email,
+            phone: data.phone || '',
               role: 'patient',
-              createdAt: serverTimestamp()
-            }
+            createdAt: serverTimestamp()
+          }
 
-            // Save to Firestore
-            const userDocRef = doc(db, 'users', firebaseUser.uid)
-            await setDoc(userDocRef, userData)
+          // Save to Firestore
+          const userDocRef = doc(db, 'users', firebaseUser.uid)
+          await setDoc(userDocRef, userData)
 
-            const token = await firebaseUser.getIdToken()
+          const token = await firebaseUser.getIdToken()
 
-            set({
-              user: {
-                id: firebaseUser.uid,
-                uid: firebaseUser.uid,
-                email: firebaseUser.email,
-                name: data.name,
-                phone: data.phone || '',
+          set({
+            user: {
+              id: firebaseUser.uid,
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              name: data.name,
+              phone: data.phone || '',
                 role: 'patient',
-                ...userData
-              },
-              token
-            })
+              ...userData
+            },
+            token
+          })
 
             console.log('✅ Patient signup successful')
-            return { success: true }
+          return { success: true }
           }
         } catch (error) {
           console.error('❌ Signup error:', error)

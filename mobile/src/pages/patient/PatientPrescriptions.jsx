@@ -6,6 +6,7 @@ import { collection, onSnapshot, orderBy, query, doc, updateDoc } from 'firebase
 import Navbar from '../../components/common/Navbar'
 import { colors } from '../../constants/colors'
 import { auth, db } from '../../services/firebase'
+import { cancelMedicationReminders } from '../../services/notificationService'
 
 const PatientPrescriptions = () => {
   const [loading, setLoading] = useState(true)
@@ -26,8 +27,43 @@ const PatientPrescriptions = () => {
 
     const unsub = onSnapshot(
       q,
-      (snap) => {
+      async (snap) => {
         const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        
+        // Auto-complete medications that have passed their end date
+        const now = new Date()
+        for (const prescription of rows) {
+          if (!prescription.isCompleted && prescription.endDate) {
+            let endDate
+            if (prescription.endDate?.toDate) {
+              endDate = prescription.endDate.toDate()
+            } else if (prescription.endDate instanceof Date) {
+              endDate = prescription.endDate
+            } else if (typeof prescription.endDate === 'string') {
+              endDate = new Date(prescription.endDate)
+            } else {
+              continue
+            }
+
+            // If end date has passed, mark as completed
+            if (endDate < now) {
+              try {
+                const prescriptionRef = doc(db, 'users', user.uid, 'prescriptions', prescription.id)
+                await updateDoc(prescriptionRef, {
+                  isCompleted: true,
+                  completedAt: new Date(),
+                })
+                
+                // Cancel medication reminders
+                await cancelMedicationReminders(prescription.id)
+                console.log(`✅ Auto-completed medication: ${prescription.name}`)
+              } catch (error) {
+                console.error('Error auto-completing prescription:', error)
+              }
+            }
+          }
+        }
+        
         setPrescriptions(rows)
         setLoading(false)
       },
@@ -47,10 +83,22 @@ const PatientPrescriptions = () => {
       if (!user || !db) return
 
       const prescriptionRef = doc(db, 'users', user.uid, 'prescriptions', prescriptionId)
+      const newCompletedStatus = !isCompleted
+      
       await updateDoc(prescriptionRef, {
-        isCompleted: !isCompleted,
-        completedAt: !isCompleted ? new Date() : null,
+        isCompleted: newCompletedStatus,
+        completedAt: newCompletedStatus ? new Date() : null,
       })
+
+      // If marking as completed, cancel medication reminders
+      if (newCompletedStatus) {
+        try {
+          await cancelMedicationReminders(prescriptionId)
+        } catch (error) {
+          console.error('Error canceling medication reminders:', error)
+          // Don't show error to user, just log it
+        }
+      }
     } catch (error) {
       console.error('Error updating prescription:', error)
       Alert.alert('Error', 'Failed to update prescription status')
@@ -124,9 +172,9 @@ const PatientPrescriptions = () => {
               {activePrescriptions.length > 0 && (
                 <>
                   {activePrescriptions.map((prescription) => (
-                    <View key={prescription.id} style={styles.card}>
-                      <View style={styles.cardHeader}>
-                        <Text style={styles.cardTitle}>{prescription.name}</Text>
+            <View key={prescription.id} style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>{prescription.name}</Text>
                         <View
                           style={[
                             styles.refillBadge,
@@ -134,35 +182,35 @@ const PatientPrescriptions = () => {
                           ]}
                         >
                           <Text style={styles.refillText}>{prescription.refills ?? 0} refills</Text>
-                        </View>
-                      </View>
-                      
-                      <View style={styles.details}>
-                        <View style={styles.detailRow}>
-                          <Text style={styles.detailLabel}>Dosage:</Text>
+                </View>
+              </View>
+              
+              <View style={styles.details}>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Dosage:</Text>
                           <Text style={styles.detailValue}>{prescription.dosage || '—'}</Text>
-                        </View>
-                        <View style={styles.detailRow}>
-                          <Text style={styles.detailLabel}>Frequency:</Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Frequency:</Text>
                           <Text style={styles.detailValue}>{prescription.frequency || '—'}</Text>
-                        </View>
-                        <View style={styles.detailRow}>
-                          <Text style={styles.detailLabel}>Duration:</Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Duration:</Text>
                           <Text style={styles.detailValue}>{prescription.duration || '—'}</Text>
                         </View>
                         <View style={styles.detailRow}>
                           <Text style={styles.detailLabel}>Prescribed:</Text>
                           <Text style={styles.detailValue}>{prescription.timeText}</Text>
-                        </View>
-                      </View>
+                </View>
+              </View>
 
-                      <View style={styles.instructionsContainer}>
+              <View style={styles.instructionsContainer}>
                         <Text style={styles.instructions}>{prescription.instructions || '—'}</Text>
-                      </View>
+              </View>
 
-                      <View style={styles.footer}>
-                        <View style={styles.timeContainer}>
-                          <Ionicons name="time" size={20} color={colors.primary[600]} />
+              <View style={styles.footer}>
+                <View style={styles.timeContainer}>
+                  <Ionicons name="time" size={20} color={colors.primary[600]} />
                           <Text style={styles.timeText}>{prescription.doctorName ? `Dr. ${prescription.doctorName}` : 'Doctor'}</Text>
                         </View>
                         <TouchableOpacity
@@ -197,16 +245,16 @@ const PatientPrescriptions = () => {
                                 <Text style={styles.completedCardDate}>Completed on {prescription.completedTimeText}</Text>
                               )}
                             </View>
-                          </View>
+                </View>
                           <TouchableOpacity
                             onPress={() => handleMarkComplete(prescription.id, prescription.isCompleted)}
                             style={styles.undoButton}
                           >
                             <Ionicons name="arrow-undo" size={18} color={colors.primary[600]} />
                           </TouchableOpacity>
-                        </View>
-                      </View>
-                    ))}
+              </View>
+            </View>
+          ))}
                   </View>
                 </View>
               )}

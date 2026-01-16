@@ -12,6 +12,7 @@ try {
 import { doc, getDoc, collection, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { auth, db, storage } from '../../services/firebase'
+import { sendDiagnosisNotification } from '../../services/notificationService'
 import Navbar from '../../components/common/Navbar'
 import { colors } from '../../constants/colors'
 
@@ -187,17 +188,25 @@ const DoctorAddDiagnosis = () => {
         }
       }
 
-      Alert.alert('Success', 'Diagnosis saved successfully!', [
-        {
-          text: 'OK',
+      // Send notification to patient
+      try {
+        await sendDiagnosisNotification(patientId, doctorName, formData.diagnosis.trim())
+      } catch (error) {
+        console.error('Error sending diagnosis notification:', error)
+        // Don't block the flow if notification fails
+      }
+
+    Alert.alert('Success', 'Diagnosis saved successfully!', [
+      {
+        text: 'OK',
           onPress: () => {
             navigation.navigate('DoctorPatientProfile', {
               patientId: patientId,
               patientName: patient?.name || routePatientName,
             })
           }
-        }
-      ])
+      }
+    ])
     } catch (error) {
       console.error('Error saving diagnosis:', error)
       Alert.alert('Error', 'Failed to save diagnosis. Please try again.')
@@ -233,39 +242,39 @@ const DoctorAddDiagnosis = () => {
         </View>
 
         <View style={styles.form}>
-          {/* Diagnosis */}
-          <View style={styles.inputGroup}>
-            <View style={styles.labelRow}>
-              <Ionicons name="medical" size={24} color={colors.primary[600]} />
+            {/* Diagnosis */}
+            <View style={styles.inputGroup}>
+              <View style={styles.labelRow}>
+                <Ionicons name="medical" size={24} color={colors.primary[600]} />
               <Text style={styles.label}>Diagnosis *</Text>
+              </View>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={formData.diagnosis}
+                onChangeText={(text) => setFormData({...formData, diagnosis: text})}
+                placeholder="Enter diagnosis details..."
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
             </View>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={formData.diagnosis}
-              onChangeText={(text) => setFormData({...formData, diagnosis: text})}
-              placeholder="Enter diagnosis details..."
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
-          </View>
 
           {/* Prescription Section (Optional) */}
           <View style={styles.sectionDivider}>
             <Text style={styles.sectionTitle}>Prescription (Optional)</Text>
           </View>
 
-          <View style={styles.inputGroup}>
-            <View style={styles.labelRow}>
+            <View style={styles.inputGroup}>
+              <View style={styles.labelRow}>
               <Ionicons name="medkit" size={20} color={colors.success[600]} />
               <Text style={styles.label}>Medication Name</Text>
-            </View>
-            <TextInput
-              style={styles.input}
-              value={formData.prescription}
-              onChangeText={(text) => setFormData({...formData, prescription: text})}
+              </View>
+              <TextInput
+                style={styles.input}
+                value={formData.prescription}
+                onChangeText={(text) => setFormData({...formData, prescription: text})}
               placeholder="e.g. Amlodipine"
-            />
+              />
           </View>
 
           <View style={styles.inputRow}>
@@ -368,7 +377,7 @@ const DoctorAddDiagnosis = () => {
               ) : (
                 <>
                   <Ionicons name="save" size={20} color={colors.white} />
-                  <Text style={styles.saveButtonText}>Save Diagnosis</Text>
+              <Text style={styles.saveButtonText}>Save Diagnosis</Text>
                 </>
               )}
             </TouchableOpacity>

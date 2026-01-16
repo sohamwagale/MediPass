@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuthStore } from '../stores/authStore'
 import { colors } from '../constants/colors'
+import { initializeNotifications, setupPatientNotificationListener } from '../services/notificationService'
 
 // Navigation ref for global navigation access
 export const navigationRef = React.createRef()
@@ -203,35 +204,47 @@ const AppNavigator = () => {
 
   useEffect(() => {
     initializeAuth()
+    // Initialize notifications on app start
+    initializeNotifications()
   }, [initializeAuth])
+
+  // Setup patient notification listener
+  useEffect(() => {
+    if (user?.role === 'patient' && token) {
+      const unsubscribe = setupPatientNotificationListener(user.uid || user.id)
+      return () => {
+        if (unsubscribe) unsubscribe()
+      }
+    }
+  }, [user, token])
 
   useEffect(() => {
     // Navigate to appropriate screen when auth state changes
     // Use a small delay to ensure navigation is ready
     const timeoutId = setTimeout(() => {
       if (navigationRef.current?.isReady()) {
-        const isAuthenticated = !!token
-        const isPatient = user?.role === 'patient'
-        const isDoctor = user?.role === 'doctor'
+      const isAuthenticated = !!token
+      const isPatient = user?.role === 'patient'
+      const isDoctor = user?.role === 'doctor'
 
         try {
-          if (isAuthenticated) {
-            if (isPatient) {
+      if (isAuthenticated) {
+        if (isPatient) {
               navigationRef.current.dispatch(
                 CommonActions.reset({
-                  index: 0,
-                  routes: [{ name: 'PatientRoot' }],
-                })
+            index: 0,
+            routes: [{ name: 'PatientRoot' }],
+          })
               )
-            } else if (isDoctor) {
+        } else if (isDoctor) {
               navigationRef.current.dispatch(
                 CommonActions.reset({
-                  index: 0,
-                  routes: [{ name: 'DoctorRoot' }],
-                })
+            index: 0,
+            routes: [{ name: 'DoctorRoot' }],
+          })
               )
-            }
-          } else {
+        }
+      } else {
             // When logged out, navigate to Landing
             const currentRoute = navigationRef.current.getCurrentRoute()
             if (currentRoute?.name !== 'Landing') {
@@ -248,8 +261,8 @@ const AppNavigator = () => {
             } catch (navError) {
               console.error('Fallback navigation error:', navError)
             }
-          }
-        }
+      }
+    }
       }
     }, 100) // Small delay to ensure state is updated
 

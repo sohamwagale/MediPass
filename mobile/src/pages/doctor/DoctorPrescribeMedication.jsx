@@ -18,6 +18,7 @@ import Navbar from '../../components/common/Navbar'
 import { colors } from '../../constants/colors'
 import { auth, db } from '../../services/firebase'
 import { useAuthStore } from '../../stores/authStore'
+import { scheduleMedicationReminder } from '../../services/notificationService'
 
 
 const DoctorPrescribeMedication = () => {
@@ -104,7 +105,29 @@ const DoctorPrescribeMedication = () => {
         createdAt: serverTimestamp(),
       }
 
-      await addDoc(collection(db, 'users', patientId, 'prescriptions'), payload)
+      const prescriptionRef = await addDoc(collection(db, 'users', patientId, 'prescriptions'), payload)
+      const prescriptionId = prescriptionRef.id
+
+      // Schedule medication reminders
+      try {
+        await scheduleMedicationReminder(
+          prescriptionId,
+          payload.name,
+          payload.dosage,
+          payload.frequency,
+          new Date(payload.startDate),
+          new Date(payload.endDate),
+          {
+            prescriptionId,
+            patientId,
+            doctorName: payload.doctorName,
+          }
+        )
+        console.log('✅ Medication reminders scheduled')
+      } catch (error) {
+        console.error('Error scheduling medication reminders:', error)
+        // Don't block the flow if reminder scheduling fails
+      }
 
       Alert.alert('Success', 'Prescription added')
       navigation.goBack()

@@ -41,6 +41,14 @@
         {
           "cameraPermission": "Allow MediPass to access your camera to scan QR codes."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#ffffff",
+          "sounds": []
+        }
       ]
     ]
   }

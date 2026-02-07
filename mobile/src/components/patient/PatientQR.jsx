@@ -50,10 +50,7 @@ const PatientQR = ({ patientId }) => {
     }
 
     try {
-      const uri = await captureRef(qrRef, {
-        format: 'png',
-        quality: 1,
-      })
+      const uri = await viewShotRef.current.capture()
       return uri
     } catch (error) {
       console.error('Error capturing QR code:', error)
@@ -233,7 +230,7 @@ const PatientQR = ({ patientId }) => {
         <View style={styles.buttonRow}>
           <TouchableOpacity
             style={[styles.button, saving && styles.buttonDisabled]}
-            onPress={handleDownload}
+            onPress={handleShare}
             disabled={saving}
           >
             {saving ? (
